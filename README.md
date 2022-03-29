@@ -6,6 +6,7 @@ TL;DR
 Proxy | Avg Latency | Avg Req/Sec/Thread | Total Req/Sec
 -- | -- | -- | --
 gateway | 2.24ms | 9.60k | 95,210.52
+envoy | 1.78ms | 12.66k | 125,956.64
 linkered | 2.96ms | 8.20k | 81,624.88
 zuul | 9.46ms | 2.66k | 26,416.49
 none | 1.48ms | 27.34k | 271,890.67
@@ -37,6 +38,13 @@ cd linkerd
 java -jar linkerd-1.3.4.jar linkerd.yaml
 ```
 
+## Terminal 5 (envoy)
+```bash
+cd envoy
+envoy -c envoy.yaml
+```
+
+
 ## Terminal N (wrk)
 
 ### install `wrk`
@@ -45,59 +53,6 @@ Ubuntu: `sudo apt install wrk`
 Mac: `brew install wrk`
 
 NOTE: run each one multiple times to warm up jvm
-
-### Gateway bench (8082)
-```bash
-$ wrk -t 10 -c 200 -d 30s http://localhost:8082/hello.txt
-Running 30s test @ http://localhost:8082/hello.txt
-  10 threads and 200 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     6.61ms    4.71ms  49.59ms   69.36%
-    Req/Sec     3.24k   278.42     9.02k    75.89%
-  969489 requests in 30.10s, 175.67MB read
-Requests/sec:  32213.38
-Transfer/sec:      5.84MB
-
-```
-
-### zuul bench (8081)
-```bash
-~% wrk -t 10 -c 200 -d 30s http://localhost:8081/hello.txt
-Running 30s test @ http://localhost:8081/hello.txt
-  10 threads and 200 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    12.56ms   13.35ms 195.11ms   86.33%
-    Req/Sec     2.09k   215.10     4.28k    71.81%
-  625781 requests in 30.09s, 123.05MB read
-Requests/sec:  20800.13
-Transfer/sec:      4.09MB
-```
-
-### linkerd bench (4140)
-```bash
-~% wrk -H "Host: web" -t 10 -c 200 -d 30s http://localhost:4140/hello.txt
-Running 30s test @ http://localhost:4140/hello.txt
-  10 threads and 200 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     7.62ms    5.45ms  53.51ms   69.82%
-    Req/Sec     2.82k   184.58     4.11k    72.17%
-  843418 requests in 30.07s, 186.61MB read
-Requests/sec:  28050.76
-Transfer/sec:      6.21MB
-```
-
-### no proxy bench (8000)
-```bash
-~% wrk -t 10 -c 200 -d 30s http://localhost:8000/hello.txt
-Running 30s test @ http://localhost:8000/hello.txt
-  10 threads and 200 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     2.09ms    2.07ms  28.37ms   85.89%
-    Req/Sec    11.77k     2.07k   45.46k    70.97%
-  3516807 requests in 30.10s, 637.24MB read
-Requests/sec: 116841.15
-Transfer/sec:     21.17MB
-```
 
 
 #### Hardware Reference
