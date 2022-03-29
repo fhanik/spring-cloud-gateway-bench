@@ -9,6 +9,10 @@ LINUX="LINUX"
 UNKNOWN="UNKNOWN"
 PLATFORM=$UNKNOWN
 
+red=`tput setaf 1`
+green=`tput setaf 2`
+reset=`tput sgr0`
+
 function detectOS() {
 
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -25,14 +29,14 @@ function detectOS() {
         PLATFORM=$UNKNOWN
     fi
 
-    echo "Platform detected: $PLATFORM"
+    echo "${green}Platform detected: $PLATFORM${reset}"
     echo
 
     if [ "$PLATFORM" == "$UNKNOWN" ]; then
-        echo "Sorry, this platform is not recognized by this Script."
+        echo "${red}Sorry, this platform is not recognized by this Script."
         echo
         echo "Open a issue if the problem continues:"
-        echo "https://github.com/spencergibb/spring-cloud-gateway-bench/issues"
+        echo "https://github.com/spencergibb/spring-cloud-gateway-bench/issues${reset}"
         echo
         exit 1
     fi
@@ -42,9 +46,9 @@ function detectOS() {
 function detectGo() {
 
     if type -p go; then
-        echo "Found Go executable in PATH"
+        echo "${green}Found Go executable in PATH${reset}"
     else
-        echo "Not found Go installed"
+        echo "${red}Not found Go installed${reset}"
         exit 1
     fi
 
@@ -53,9 +57,9 @@ function detectGo() {
 function detectJava() {
 
     if type -p java; then
-        echo "Found Java executable in PATH"
+        echo "${green}Found Java executable in PATH${reset}"
     else
-        echo "Not found Java installed"
+        echo "${red}Not found Java installed${reset}"
         exit 1
     fi
 
@@ -64,9 +68,9 @@ function detectJava() {
 function detectMaven() {
 
     if type -p mvn; then
-        echo "Found Maven executable in PATH"
+        echo "${green}Found Maven executable in PATH${reset}"
     else
-        echo "Not found Java installed"
+        echo "${red}Not found Java installed${reset}"
         exit 1
     fi
 
@@ -75,9 +79,9 @@ function detectMaven() {
 function detectWrk() {
 
     if type -p wrk; then
-        echo "Found wrk executable in PATH"
+        echo "${green}Found wrk executable in PATH${reset}"
     else
-        echo "Not found wrk installed"
+        echo "${red}Not found wrk installed${reset}"
         exit 1
     fi
 
@@ -108,7 +112,8 @@ function runStatic() {
         GOOS=darwin GOARCH=amd64 go build -o webserver.darwin-amd64 webserver.go
         ./webserver.darwin-amd64
     elif [ "$PLATFORM" == "$LINUX" ]; then
-        # go build -o webserver webserver.go
+        rm webserver
+        go build -o webserver webserver.go
         ./webserver
         exit 1
     elif [ "$PLATFORM" == "$WIN" ]; then
@@ -123,25 +128,25 @@ function runStatic() {
 
 function runZuul() {
 
-    echo "Running Gateway Zuul"
+    echo "${green}Running Gateway Zuul${reset}"
 
     cd zuul
-    ./mvnw clean package
+    ./mvnw -DskipTests clean package
     java -jar target/zuul-0.0.1-SNAPSHOT.jar
 }
 
 function runGateway() {
 
-    echo "Running Spring Gateway"
+    echo "${green}Running Spring Gateway${reset}"
 
     cd gateway
-    ./mvnw clean package
-    java -jar target/gateway-0.0.1-SNAPSHOT.jar
+    ./mvnw -DskipTests clean package
+    java -jar target/demo-0.0.1-SNAPSHOT.jar
 }
 
 function runLinkerd() {
 
-    echo "Running Gateway Linkerd"
+    echo "${green}Running Gateway Linkerd${reset}"
 
     cd linkerd
     java -jar linkerd-1.3.4.jar linkerd.yaml
@@ -151,7 +156,7 @@ function runLinkerd() {
 trap ctrl_c INT
 
 function ctrl_c() {
-        echo "** Trapped CTRL-C"
+        echo "${red}** Trapped CTRL-C${reset}"
         kill $(ps aux | grep './webserver.darwin-amd64' | awk '{print $2}')
         pkill java
         exit 1
@@ -160,12 +165,12 @@ function ctrl_c() {
 #Run Static web server
 runStatic &
 
-echo "Verifying static webserver is running"
+echo "${green}Verifying static webserver is running${reset}"
 
 response=$(curl http://localhost:8000/hello.txt)
 if [ '{output:"I Love Spring Cloud"}' != "${response}" ]; then
     echo
-    echo "Problem running static webserver, response: $response"
+    echo "${red}Problem running static webserver, response: $response${reset}"
     echo
     exit 1
 fi;
@@ -175,7 +180,7 @@ sleep 10
 
 function runGateways() {
 
-    echo "Run Gateways"
+    echo "${green}Run Gateways${reset}"
     runZuul &
     runGateway &
     runLinkerd &
@@ -183,41 +188,64 @@ function runGateways() {
 }
 
 runGateways
+sleep 10
+
+echo "${green}Verifying gateways are running${reset}"
+
+response=$(curl http://localhost:8081/hello.txt)
+if [ '{output:"I Love Spring Cloud"}' != "${response}" ]; then
+    echo
+    echo "${red}Problem running Spring Cloud Gateway, response: $response${reset}"
+    echo
+    exit 1
+fi;
+
+response=$(curl http://localhost:8082/hello.txt)
+if [ '{output:"I Love Spring Cloud"}' != "${response}" ]; then
+    echo
+    echo "${red}Problem running Zuul, response: $response${reset}"
+    echo
+    exit 1
+fi;
+
+response=$(curl http://localhost:4140/hello.txt)
+if [ '{output:"I Love Spring Cloud"}' != "${response}" ]; then
+    echo
+    echo "${red}Problem running LinkerD, response: $response${reset}"
+    echo
+    exit 1
+fi;
 
 #Execute performance tests
 
-function warmup() {
-
-    echo "JVM Warmup"
-
-    for run in {1..10}
-    do
-      wrk -t 10 -c 200 -d 30s http://localhost:8082/hello.txt >> ./reports/gateway.txt
-    done
-
-    for run in {1..10}
-    do
-      wrk -H "Host: web" -t 10 -c 200 -d 30s http://localhost:4140/hello.txt >> ./reports/linkerd.txt
-    done
-
-    for run in {1..10}
-    do
-      wrk -t 10 -c 200 -d 30s http://localhost:8081/hello.txt >> ./reports/zuul.txt
-    done
-}
-
 function runPerformanceTests() {
 
-    echo "Static results"
+    echo "${red}JVM Warmup${reset}"
     wrk -t 10 -c 200 -d 30s  http://localhost:8000/hello.txt > ./reports/static.txt
 
-    echo "Wait 60 seconds"
-    sleep 60
+    echo "${green}Gateway Warmup${reset}"
+    wrk -t 10 -c 200 -d 30s http://localhost:8082/hello.txt > /dev/null 2>&1
+    echo "${green}LinkerD Warmup${reset}"
+    wrk -H "Host: web" -t 10 -c 200 -d 30s http://localhost:4140/hello.txt  > /dev/null 2>&1
+    echo "${green}Zuul Warmup${reset}"
+    wrk -t 10 -c 200 -d 30s http://localhost:8081/hello.txt  > /dev/null 2>&1
 
-    warmup
+    echo "${red}Actual tests${reset}"
+
+    for run in {1..4}
+    do
+      echo "${green}Actual test run: ${run}${reset}"
+      wrk -t 10 -c 200 -d 30s http://localhost:8082/hello.txt >> ./reports/gateway.txt
+      wrk -H "Host: web" -t 10 -c 200 -d 30s http://localhost:4140/hello.txt >> ./reports/linkerd.txt
+      wrk -t 10 -c 200 -d 30s http://localhost:8081/hello.txt >> ./reports/zuul.txt
+    done
+
+    echo "${green}Main tests complete${reset}"
+
 }
+
 
 runPerformanceTests
 
 ctrl_c
-echo "Script Finished"
+echo "${green}Script Finished${reset}"
