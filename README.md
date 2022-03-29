@@ -3,12 +3,12 @@ Spring Cloud Gateway Benchmark
 
 TL;DR
 
-Proxy | Avg Latency | Avg Req/Sec/Thread
+Proxy | Avg Latency | Avg Req/Sec/Thread | Total Req/Sec
 -- | -- | -- 
-gateway | 6.61ms | 3.24k
-linkered | 7.62ms | 2.82k
-zuul | 12.56ms | 2.09k
-none | 2.09ms | 11.77k
+gateway | 2.24ms | 9.60k | 95,210.52
+linkered | 2.96ms | 8.20k | 81,624.88
+zuul | 9.46ms | 2.66k | 26,416.49
+none | 1.48ms | 27.34k | 271,890.67
 
 ## Terminal 1 (simple webserver)
 

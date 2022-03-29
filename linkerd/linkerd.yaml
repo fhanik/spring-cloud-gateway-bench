@@ -17,7 +17,7 @@ routers:
   # and should look for a file named "hello".  linkerd will then load balance
   # over the entries in that file.
   dtab: |
-    /svc => /#/io.l5d.fs
+    /svc => /#/io.l5d.fs/web
   servers:
   - ip: 0.0.0.0
     port: 4140
