@@ -41,6 +41,10 @@ java -jar linkerd-1.3.4.jar linkerd.yaml
 ## Terminal 5 (envoy)
 ```bash
 cd envoy
+
+envoy --version
+# envoy  version: d362e791eb9e4efa8d87f6d878740e72dc8330ac/1.18.2/clean-getenvoy-76c310e-envoy/RELEASE/BoringSSL
+
 envoy -c envoy.yaml
 ```
 
